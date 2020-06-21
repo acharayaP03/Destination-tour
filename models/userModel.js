@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 
+//passowrd hashing
+const bcrypt = require('bcryptjs');
+
 //CREATE SCHEMA FOR USER MODEL..
 //create username, email, photo, password, confirmPassowrd fields. 
 
@@ -15,7 +18,7 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         unique: true,
         required: [true, 'Please include your email.'],
-        validator: [validator.isEmail, 'Please provide valid email.']
+        validate: [validator.isEmail, 'Please provide valid email.']
     },
     photo: {
         type: String
@@ -27,8 +30,30 @@ const userSchema = new mongoose.Schema({
     },
     confirmPassword: {
         type: String,
-        required: [true, 'Please confirm your passowrd.']
+        required: [true, 'Please confirm your passowrd.'],
+        validate : {
+            //Only works on SAVE AND CREATE.
+            validator: function(el){
+                //if the confirmPassword is not equal to password then , this fucntion wil return false on save. 
+                return el === this.password
+            },
+            message: "Confirm password does not match password."
+        }
     }
+});
+
+//Mongoose middleware presave inorder to salt passowrd or encrypt password when saving to the database. 
+
+userSchema.pre('save', async function(next) {
+    //only run this fucntion if password is already modified.
+    if(!this.isModified('password')) return next(); 
+    //if not then modify it with hash with the cost of 12.
+    this.password = await bcrypt.hash(this.password, 12);
+
+    //we dont need to save confirm password, hence we are deleting it by setting it to undefined. 
+    this.confirmPassword = undefined
+
+    next()
 })
 
 
