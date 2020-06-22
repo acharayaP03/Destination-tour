@@ -71,7 +71,7 @@ exports.protectedRoutes = catchAsync(async (req, res, next ) =>{
         token = req.headers.authorization.split(' ')[1]
        
     }
-    console.log(token)
+    //console.log(token)
 
     if(!token){
         return next( new AppError('Unauthorize access, please log in before your access this page.', 401))
