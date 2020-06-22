@@ -2,6 +2,7 @@ const Tour = require('./../models/tourModel')
 const APIFeatures = require('./../utils/apiFeatures');
 const AppError = require('./../utils/appError')
 const catchAsync = require('./../utils/catchAsync');
+
 //this a middleware which will run before getAllTours.
 exports.topCheapTours = (req, res, next) =>{
    
