@@ -43,7 +43,7 @@ exports.login =catchAsync(async (req, res, next) =>{
     }
 
     // 2) Check if user exists && passowrd is correct
-    //since password is included, we need to manualy include here with select('+passowrd')
+    //since password is excluded, we need to manualy include here with select('+passowrd')
     const user = await User.findOne({ email }).select('+password')
     //calling instance method from user models
    
@@ -60,3 +60,26 @@ exports.login =catchAsync(async (req, res, next) =>{
         token
     })
 });
+
+exports.protectedRoutes = catchAsync(async (req, res, next ) =>{
+
+    let  token;
+    // 1) Getting token and check if it's there 
+  
+    if(req.headers.authorization && req.headers.authorization.startsWith('Bearer')){
+       
+        token = req.headers.authorization.split(' ')[1]
+       
+    }
+    //console.log(token)
+
+    if(!token){
+        return next( new AppError('Unauthorize access, please log in before your access this page.', 401))
+    }
+    // 2) validate the token that was received.
+
+    // 3) If successfull check if user still exists.
+
+    // 4) Check if user has changed the password after token has been sent or issued.
+    next();
+})
