@@ -5,7 +5,7 @@ dotenv.config({ path : './config.env'})
 //UNHANDLED EXCEPTION should be always at the top of all middle wares as this will catch all exceptions before even reaching to the routes.
 process.on('uncaughtException', err =>{
     console.log('UNCAUGHT EXCEPTION ERROR, Shutting down....')
-    console.log(err.name, err.message);
+    console.log(err.name, err.message, err);
    
     process.exit(1)
 })
