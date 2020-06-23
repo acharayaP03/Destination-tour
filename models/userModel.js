@@ -40,7 +40,8 @@ const userSchema = new mongoose.Schema({
             },
             message: "Confirm password does not match password."
         }
-    }
+    },
+    passwordChangedAt: Date
 });
 
 //Mongoose middleware presave inorder to salt passowrd or encrypt password when saving to the database. 
@@ -62,7 +63,19 @@ userSchema.methods.correctPassword = async function(candidatePassword, userPassw
     return await bcrypt.compare(candidatePassword, userPassword)
 }
 
+//instance method for user change password.
+userSchema.methods.changedPasswordAfter = function(JWTTimestamp){
+    if (this.passwordChangedAt) {
+        const changedTimestamp = parseInt( this.passwordChangedAt.getTime() / 1000, 10);
+        
+        // if the token issued is less then return true. and password has been changed.
+        return JWTTimestamp < changedTimestamp;
 
+      }
+    
+      // False means NOT changed
+      return false;
+}
 const User = mongoose.model('User', userSchema)
 
 module.exports = User;

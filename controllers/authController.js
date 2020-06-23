@@ -16,7 +16,8 @@ exports.signup = catchAsync( async(req, res) =>{
         name: req.body.name,
         email: req.body.email,
         password: req.body.password,
-        confirmPassword: req.body.confirmPassword
+        confirmPassword: req.body.confirmPassword,
+        passwordChangedAt: req.body.passwordChangedAt
     });
 
     //creating json web token
@@ -52,7 +53,7 @@ exports.login =catchAsync(async (req, res, next) =>{
         return next(new AppError('Incorrect email or passowrd', 401))
     }
 
-    console.log(user)
+    //console.log(user)
     // 3) If everything is ok then send token to the client.
 
     const token = signToken(user._id )
@@ -85,5 +86,14 @@ exports.protectedRoutes = catchAsync(async (req, res, next ) =>{
         return next( new AppError('The user doesnot exit.', 401))
     }
     // 4) Check if user has changed the password after token has been sent or issued.
+    
+    if (freshUser.changedPasswordAfter(decode.iat)) {
+        return next(
+          new AppError('User recently changed password! Please log in again.', 401)
+        );
+      }
+    
+    // GRANT ACCESS TO PROTECTED ROUTE
+    req.user = freshUser;
     next();
 })
