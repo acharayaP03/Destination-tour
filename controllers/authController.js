@@ -2,7 +2,8 @@ const { promisify } = require('util')
 const jwt = require('jsonwebtoken');
 const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
-const AppError = require('./../utils/appError')
+const AppError = require('./../utils/appError');
+//const { use } = require('../routes/userRoutes');
 
 const signToken = id =>{
     return jwt.sign({ id: id }, process.env.JWT_SECRET, {
@@ -82,20 +83,20 @@ exports.protectedRoutes = catchAsync(async (req, res, next ) =>{
     const decode = await promisify(jwt.verify)(token, process.env.JWT_SECRET)
     //console.log(decode)
     // 3) If successfull check if user still exists.
-    const freshUser = await User.findById(decode.id)
-    if(!freshUser){
+    const currentUser = await User.findById(decode.id)
+    if(!currentUser){
         return next( new AppError('The user doesnot exit.', 401))
     }
     // 4) Check if user has changed the password after token has been sent or issued.
     
-    if (freshUser.changedPasswordAfter(decode.iat)) {
+    if (currentUser.changedPasswordAfter(decode.iat)) {
         return next(
           new AppError('User recently changed password! Please log in again.', 401)
         );
       }
     
     // GRANT ACCESS TO PROTECTED ROUTE
-    req.user = freshUser;
+    req.user = currentUser;
     next();
 })
 
@@ -111,4 +112,27 @@ exports.restrictTo = (...roles) =>{
 
         next();
     }
+}
+
+exports.forgotPassword = catchAsync(async (req, res, next) =>{
+
+    //1) Get user based on Posted email.
+    //at this poit we dont have user id, hence why we need to use findOne method.
+    const user = await User.findOne({email: req.body.email})
+    //if email doesnt exist then throw error 
+    if(!user){
+        return next(new AppError('There no user with that email', 404))
+    }
+
+    // 2) Generate the Random reset token.
+    const resetToken = user.createPasswordResetToken();
+    //validateBeforeSave has to be set to false or else, we will get validation error from mongoose. becasue at resetToken we only modified the document, but while saving it we actually need to pass
+    // validateBeforeSave option and set it to false inorder to save it. 
+    // validateBeforeSave deactivates all the mongoose validator in userSchema. 
+    await user.save({ validateBeforeSave: false})
+
+})
+
+exports.resetPassword = (req, res, next) =>{
+
 }

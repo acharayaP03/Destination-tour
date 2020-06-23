@@ -1,3 +1,4 @@
+const crypto = require('crypto')
 const mongoose = require('mongoose');
 const validator = require('validator');
 
@@ -46,7 +47,9 @@ const userSchema = new mongoose.Schema({
             message: "Confirm password does not match password."
         }
     },
-    passwordChangedAt: Date
+    passwordChangedAt: Date,
+    passwordResetToken: String,
+    passwordResetExpires: Date
 });
 
 //Mongoose middleware presave inorder to salt passowrd or encrypt password when saving to the database. 
@@ -81,6 +84,23 @@ userSchema.methods.changedPasswordAfter = function(JWTTimestamp){
       // False means NOT changed
       return false;
 }
+userSchema.methods.createPasswordResetToken = function(){
+    //this will be sent to user in order reset the passowrd. only user will have access to this token which will be sent via email.
+    //this will not be stored in to the database.
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    //creating a hash and saving it to the passwordResetToken, and only saving it in a encryted version in db.
+    this.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex')
+    //password reset passwordResetExpires
+
+    console.log({resetToken}, this.passwordResetToken)
+    
+    this.passwordResetExpires = Date.now() + 10 * 60* 100
+
+    return resetToken;
+
+}
+
 const User = mongoose.model('User', userSchema)
 
 module.exports = User;
