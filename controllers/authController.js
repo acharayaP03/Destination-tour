@@ -17,7 +17,8 @@ exports.signup = catchAsync( async(req, res) =>{
         email: req.body.email,
         password: req.body.password,
         confirmPassword: req.body.confirmPassword,
-        passwordChangedAt: req.body.passwordChangedAt
+        passwordChangedAt: req.body.passwordChangedAt,
+        role: req.body.role
     });
 
     //creating json web token
@@ -97,3 +98,17 @@ exports.protectedRoutes = catchAsync(async (req, res, next ) =>{
     req.user = freshUser;
     next();
 })
+
+//RESTRICTING ACCESS ACCORDING TO THE LEVEL
+exports.restrictTo = (...roles) =>{
+    return (req, res, next) =>{
+        //check if the req.user from above has roles such as [ 'admin' , 'lead-guide']
+        if(!roles.includes(req.user.role)){
+            return next( new AppError('You do not have permission to perform this action.', 401));
+        }
+
+        //if req.user.role has [admin or lead-guide ] then proceed to next() and perform action
+
+        next();
+    }
+}
