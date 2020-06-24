@@ -12,6 +12,20 @@ const signToken = id =>{
     })
 }
 
+//this function will actually replace all our response 
+const createSendToken = ( user, statusCode, res) =>{
+
+    const token = signToken(user._id )
+
+    res.status(statusCode).json({
+        status: 'success',
+        token, 
+        data: {
+            user
+        }
+    })
+}
+
 exports.signup = catchAsync( async(req, res) =>{
     //varifying user whilst loging in...
     const newUser = await User.create({
@@ -23,15 +37,7 @@ exports.signup = catchAsync( async(req, res) =>{
     });
 
     //creating json web token
-    const token = signToken(newUser._id )
-
-    res.status(201).json({
-        status: 'success',
-        token, 
-        data: {
-            user: newUser
-        }
-    })
+    createSendToken(newUser, 201, res)
 });
 
 //Login in user  with their credentials..
@@ -57,14 +63,11 @@ exports.login =catchAsync(async (req, res, next) =>{
 
     //console.log(user)
     // 3) If everything is ok then send token to the client.
-
-    const token = signToken(user._id )
-    res.status(200).json({
-        status: 'success',
-        token
-    })
+    createSendToken(user, 200, res)
 });
 
+
+//Protect routes or only let members to access routes. 
 exports.protectedRoutes = catchAsync(async (req, res, next ) =>{
 
     let  token;
@@ -114,6 +117,7 @@ exports.restrictTo = (...roles) =>{
     }
 }
 
+//Forgot password and reset password.
 exports.forgotPassword = catchAsync(async (req, res, next) =>{
 
     //1) Get user based on Posted email.
@@ -164,6 +168,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) =>{
 
 })
 
+//reset password and save temp token 
 exports.resetPassword =catchAsync(async (req, res, next) =>{
 
     // 1) Get user based on the token.
@@ -195,11 +200,27 @@ exports.resetPassword =catchAsync(async (req, res, next) =>{
 
     // 4) Log the user in, send jwt.
     //creating json web token
-    const token = signToken(user._id )
-
-    res.status(201).json({
-        status: 'success',
-        token
-    })
-
+    createSendToken(user, 200, res)
 });
+
+//change password
+
+exports.updatePassword = catchAsync( async (req, res, next) =>{
+
+    // 1) Get user from the collection.
+    // inorder to get current logged in user, we will first check it with its id. 
+    // we get this password from protect middle ware.
+    const user = await User.findById(req.user.id).select('+password');
+
+    // 2) check if posted current password is correct
+    if(!(await user.correctPassword(req.body.passwordCurrent, user.password))){
+        return next( new AppError('Your provided password doesnot match.', 401))
+    } 
+
+    // 3) if Correct then update the password in the data base.
+    user.password = req.body.password;
+    user.confirmPassword = req.body.confirmPassword;
+    user.save()
+    // 4) log user in. 
+    createSendToken(user, 200, res)
+})
