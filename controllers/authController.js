@@ -164,6 +164,42 @@ exports.forgotPassword = catchAsync(async (req, res, next) =>{
 
 })
 
-exports.resetPassword = (req, res, next) =>{
+exports.resetPassword =catchAsync(async (req, res, next) =>{
 
-}
+    // 1) Get user based on the token.
+    // since we already sent a non hashed token on req.body -- on resetToken on usermodel and saved encrypted one in db, in order to compare it we actually need to 
+    // encrypt the token that we sent to the user email and compare it with the token that is saved in the database.
+    // Let's encrypt user token first. 
+    const hashedToken = crypto.createHash('sha256').update(req.params.token).digest('hex');
+
+    //new lets get the user based on this token. and also check if the token sent is still valid. 
+    const user = await User.findOne({
+        passwordResetToken : hashedToken, 
+        passwordResetExpires: { $gt: Date.now()} //checks the if the token is still valid.
+    })
+
+    // 2) If token has not expired, and there is user, set the new password.
+    if(!user){
+        return next( new AppError('Token is invalid or has been expired', 400))
+    }
+    //if user exist and token is valid then
+    user.password = req.body.password;
+    user.confirmPassword = req.body.confirmPassword;
+    //now delete the tokena and expiry from db. 
+    user.passwordResetToken = undefined; // this will delete property from mongoose. 
+    user.passwordResetExpires = undefined;
+    // In this case we don't need to turn validator off. so just save user
+    user.save();
+
+    // 3) Update changedPasswordAt property for the user.
+
+    // 4) Log the user in, send jwt.
+    //creating json web token
+    const token = signToken(user._id )
+
+    res.status(201).json({
+        status: 'success',
+        token
+    })
+
+});
