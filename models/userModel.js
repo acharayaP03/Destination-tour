@@ -66,6 +66,16 @@ userSchema.pre('save', async function(next) {
     next()
 })
 
+//save passwordChangedAt time after reseting password.
+userSchema.pre('save', function(next){
+
+    //this will run and proceed to change pasword if not modified and user has put a request 
+    if(!this.isModified || this.isNew) return next();
+
+    //some time db takes time to save password where jwt has already been sent, this a hack to delay user logging in immedietly to the app. 
+    this.passwordChangedAt = Date.now() - 1000;
+    next();
+})
 //decrypt password by instance method.
 userSchema.methods.correctPassword = async function(candidatePassword, userPassword) {
     return await bcrypt.compare(candidatePassword, userPassword)
@@ -95,6 +105,7 @@ userSchema.methods.createPasswordResetToken = function(){
 
     console.log({resetToken}, this.passwordResetToken)
     
+    //password token expires in 10 min
     this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
 
     return resetToken;
