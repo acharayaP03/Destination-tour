@@ -1,6 +1,7 @@
 const express = require('express');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');//dev logger middleware
+const rateLimit = require('express-rate-limit');// api request limiter middleware
+const helmet = require('helmet');// header middleware.
 // eslint-disable-next-line prettier/prettier
 
 const AppError = require('./utils/appError');
@@ -12,12 +13,17 @@ const app = express();
 
 // 1) GLOBAL MIDDLEWARES....
 
+// Header middleware
+// set header before anything else.
+app.use(helmet())
+
+// dev logger middleware
 // console.log(process.env.NODE_ENV)
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// rate limiter..
+// rate limiter.. midleware
 const limiter = rateLimit({
   max: 100,
   windowMs: 60 * 60 * 1000,
@@ -26,13 +32,15 @@ const limiter = rateLimit({
 
 app.use("/api", limiter)
 
-//express json middleware to for json reply..
-app.use(express.json());
+//express json/bodyparser middleware to for json reply.. in req.body
 
-//Public path to access assets such as images css and others..
+app.use(express.json({ limit : '10kb'}));// limiting file size while serving application.
+
+//Public path to access assets such as images css and others/ static file middleware
 app.use(express.static(`${__dirname}/public`));
 
 
+// test middle ware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   //console.log(req.headers)
@@ -48,32 +56,6 @@ app.get('/', (req, res, next) => {
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 
-// for all http verbs, if there is invalid request.
-/*
-An Example of very simple error handler..
-app.all('*', (req, res, next) =>{
-  // res.status(404).json({
-  //   status: 'fai',
-  //   message: `Cannot get ${req.originalUrl} on this server..`
-  // })
-
-  const err = new Error( `Cannot get ${req.originalUrl} on this server..`)
-  err.status = 'fail',
-  err.statusCode = 404
-
-  next(err)
-})
-
-app.use((err, req, res, next) =>{
-  err.status = err.status || 'fail';
-  errstatusCode = err.statusCode || 500;
-
-  res.status(err.statusCode).json({
-    status : err.status,
-    message: err.message
-  })
-})
-*/
 
 //Introducing Error handler middleware.
 app.all('*', (req, res, next) =>{
