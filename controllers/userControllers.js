@@ -48,7 +48,19 @@ exports.updateUserData = catchAsync( async (req, res, next) =>{
             user: updatedUser
         }
     })
-})
+});
+
+//we dont allow users to delete their account but simply deactivate their account just incase if they want to reactivate.
+//inorder to acheive this, we added a field in our userModel schema called active.
+exports.deleteUserData = catchAsync( async (req, res, next) =>{
+    //since user is already logged in, we can get thier id from req.body.id 
+    await User.findByIdAndUpdate(req.user.id, { active: false})
+
+    res.status(204).json({
+        status: 'success',
+        data: null
+    })
+});
 
 exports.getUser = (req, res)=>{
     res.status(500).json({

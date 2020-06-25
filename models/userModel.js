@@ -49,7 +49,12 @@ const userSchema = new mongoose.Schema({
     },
     passwordChangedAt: Date,
     passwordResetToken: String,
-    passwordResetExpires: Date
+    passwordResetExpires: Date,
+    active: {
+        type: Boolean,
+        default: true,
+        select: false
+    }
 });
 
 //Mongoose middleware presave inorder to salt passowrd or encrypt password when saving to the database. 
@@ -74,6 +79,13 @@ userSchema.pre('save', function(next){
 
     //some time db takes time to save password where jwt has already been sent, this a hack to delay user logging in immedietly to the app. 
     this.passwordChangedAt = Date.now() - 1000;
+    next();
+})
+//this is a query middle ware which only run if there is an active property set to false on the current document. and hides it when all requesting all users.
+userSchema.pre(/^find/, function(next){
+   
+    this.find({ active: {$ne : false}})
+
     next();
 })
 //decrypt password by instance method.
