@@ -16,7 +16,18 @@ const signToken = id =>{
 const createSendToken = ( user, statusCode, res) =>{
 
     const token = signToken(user._id )
-
+    //only send cookie options when in production
+    const cookieOptions = {
+        expires: new Date( Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60* 60 * 1000),// converting it into milliseconds.
+        httpOnly: true
+    }
+    
+    // secure option will be set to true only in production.
+    if(process.env.NODE_ENV === 'production') cookieOptions.secure = true
+     //from here we will send jwt via cookie which then only be accessible by http only
+    res.cookie('jwt', token, cookieOptions);
+    //once the user is created, dont show password field.
+    user.password = undefined;
     res.status(statusCode).json({
         status: 'success',
         token, 
