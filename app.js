@@ -3,7 +3,8 @@ const morgan = require('morgan');//dev logger middleware
 const rateLimit = require('express-rate-limit');// api request limiter middleware
 const helmet = require('helmet');// header middleware.
 const mongoSanitize = require('express-mongo-sanitize') // NoSQL injection attack midleware.
-const xssClean = require('xss-clean')
+const xssClean = require('xss-clean') //XSS middleware
+const hpp = require('hpp')// params pollution middleware
 // eslint-disable-next-line prettier/prettier
 
 const AppError = require('./utils/appError');
@@ -42,6 +43,10 @@ app.use(express.json({ limit : '10kb'}));// limiting file size while serving app
 app.use(mongoSanitize())
 //data sanitization against XSS
 app.use(xssClean())
+//prevent params pollution. only whitelist those params that are defiened 
+app.use(hpp( {
+  whitelist: ['duration', 'ratingAverage', 'maxGroupSize', 'difficulty', 'price', 'ratingsQuantity']
+}))
 //Public path to access assets such as images css and others/ static file middleware
 app.use(express.static(`${__dirname}/public`));
 
