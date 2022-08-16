@@ -19,8 +19,6 @@ const db = process.env.DATABASE.replace('<PASSWORD>', process.env.DATABASE_PASSW
 mongoose.connect(db, {
     useUnifiedTopology:true,
     useNewUrlParser: true,
-    useCreateIndex: true,
-    useFindAndModify: false
 }).then(con =>{
     //console.log(con.connections)
     console.log('Database has been connected successfully...')
