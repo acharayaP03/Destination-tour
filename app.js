@@ -35,25 +35,41 @@ const limiter = rateLimit({
 
 app.use("/api", limiter)
 
-//express json/bodyparser middleware to for json reply/ reading data from body into req.body
+/**
+ * express json/bodyparser middleware to for json reply/ reading data from body into req.body
+ * this will run as soon as the request arrives to server.
+ */
 
 app.use(express.json({ limit : '10kb'}));// limiting file size while serving application.
 
-//data sanitization against NoSQL query injection
+/**
+ * data sanitization against NoSQL query injection
+ * */
 app.use(mongoSanitize())
-//data sanitization against XSS
+/**
+ * data sanitization against XSS
+ * */
 app.use(xssClean())
-//prevent params pollution. only whitelist those params that are defiened 
+
+/**
+ * prevent params pollution. only whitelist those params that are defined
+ * */
 app.use(hpp( {
   whitelist: ['duration', 'ratingAverage', 'maxGroupSize', 'difficulty', 'price', 'ratingsQuantity']
-}))
-//Public path to access assets such as images css and others/ static file middleware
+}));
+
+/**
+ * Public path to access assets such as images css and others/ static file middleware */
 app.use(express.static(`${__dirname}/public`));
 
 
-// test middle ware
+/**
+ * test time it took to send response to user.
+ * this will actually put a property on response onject
+ * */
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
+
   //console.log(req.headers)
   next();
 });
@@ -63,12 +79,21 @@ app.get('/', (req, res, next) => {
   res.end();
 });
 
-//Introducing router middleware for more modularity... and mounting them.
+/**
+ *
+ * Introducing router middleware for more modularity... and mounting them.
+ * */
+
 app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
 
 
-//Introducing Error handler middleware.
+/**
+ *
+ * Introducing Error handler middleware.
+ * these error will be handled in the controller for all path.
+ * notice '*' wild card which will match to every request.
+ * */
 app.all('*', (req, res, next) =>{
 
   //this error will be handled from the error controller..
